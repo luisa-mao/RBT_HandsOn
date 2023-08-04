@@ -8,9 +8,8 @@ C610Bus<CAN2> bus;     // Initialize the Teensy's CAN bus to talk to the motors
 const int LOOP_DELAY_MILLIS = 5; // Wait for 0.005s between motor updates.
 
 const float m1_offset = 0.0;
-const float m2_offset = 0.0;
 
-// Step 5. Implement your own PD controller here.
+// Implement your own PD controller here.
 float pd_control(float pos,
                  float vel,
                  float target,
@@ -20,6 +19,11 @@ float pd_control(float pos,
   return 0.0; // YOUR CODE HERE
 }
 
+/* Sanitize current command to make it safer.
+
+Clips current command between bounds. Reduces command if actuator outside of position or velocity bounds.
+Max current defaults to 1000mA. Max position defaults to +-180degs. Max velocity defaults to +-5rotations/s.
+*/
 void sanitize_current_command(float &command,
                               float pos,
                               float vel,
@@ -28,11 +32,6 @@ void sanitize_current_command(float &command,
                               float max_vel = 30,
                               float reduction_factor = 0.1)
 {
-  /* Sanitize current command to make it safer.
-
-  Clips current command between bounds. Reduces command if actuator outside of position or velocity bounds.
-  Max current defaults to 1000mA. Max position defaults to +-180degs. Max velocity defaults to +-5rotations/s.
-  */
   command = command > max_current ? max_current : command;
   command = command < -max_current ? -max_current : command;
   if (pos > max_pos || pos < -max_pos)
@@ -105,52 +104,25 @@ void loop()
     Serial.print(m0_vel);
 
     float m0_current = 0.0;
-    float m1_current = 0.0;
-    float m2_current = 0.0;
 
-
-    // Step 8. Change the target position to something periodic
-    // float time = millis() / 1000.0; // millis() returns the time in milliseconds since start of program
-
-    // Step 5. Your PD controller is run here.
+    // Your PD controller is run here.
     float Kp = 1000.0;
     float Kd = 0;
     float target_position = 0.0; // modify in step 8
     m0_current = pd_control(m0_pos, m0_vel, target_position, Kp, Kd);
 
-    // Step 4. Uncomment for bang-bang control. Comment out again before Step 5.
+    // Uncomment for bang-bang control
     // if(m0_pos < 0) {
     //   m0_current = 800;
     // } else {
     //   m0_current = -800;
     // }
 
-    // Step 10. Program periodic motion for all three motors.
-
-    // Step 9. Program PID control for the two other motors.
-    float m1_pos = bus.Get(1).Position();
-    float m1_vel = bus.Get(1).Velocity();
-    float m2_pos = bus.Get(2).Position();
-    float m2_vel = bus.Get(2).Velocity();
-    Serial.print("\tm1_pos: ");
-    Serial.print(m1_pos);
-    Serial.print("\tm1_vel: ");
-    Serial.print(m1_vel);
-    Serial.print("\tm2_pos: ");
-    Serial.print(m2_pos);
-    Serial.print("\tm2_vel: ");
-    Serial.print(m2_vel);
-    // m1_current = YOUR PID CODE
-    // m2_current = YOUR PID CODE
-
     // Sanitizes your computed current commands to make the robot safer.
     sanitize_current_command(m0_current, m0_pos, m0_vel);
-    sanitize_current_command(m1_current, m1_pos, m1_vel);
-    sanitize_current_command(m2_current, m2_pos, m2_vel);
+
     // Only call CommandTorques once per loop! Calling it multiple times will override the last command.
-    bus.CommandTorques(m0_current, m1_current, m2_current, 0, C610Subbus::kIDZeroToThree);
-    // Once you motors with ID=4 to 7, use this command
-    // bus.CommandTorques(0, 0, 0, 0, C610Subbus::kIDFourToSeven);
+    bus.CommandTorques(m0_current, 0, 0, 0, C610Subbus::kIDZeroToThree);
 
     last_command = now;
     Serial.println();
