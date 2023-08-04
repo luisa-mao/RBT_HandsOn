@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "C610Bus.h"
+#include "HandsOn2Util.hpp"
 
 long last_command = 0; // To keep track of when we last commanded the motors
 C610Bus<CAN2> bus;     // Initialize the Teensy's CAN bus to talk to the motors
@@ -48,24 +49,30 @@ void sanitize_current_command(float &command,
 // This code waits for the user to type s before executing code.
 void setup()
 {
-  // Remove all characters that might have been stored up in the serial input buffer prior to running this program
-  while (Serial.available()) {
-    Serial.read();
-  }
-  long last_print = millis();
-  while (true)
-  {
-    char c = Serial.read();
-    if (c == 's')
-    {
-      Serial.println("Starting code.");
-      break;
-    }
-    if (millis() - last_print > 2000) {
-      Serial.println("Press s to start.");
-      last_print = millis();
-    }
-  }
+  // // Remove all characters that might have been stored up in the serial input buffer prior to running this program
+  // while (Serial.available()) {
+  //   Serial.read();
+  // }
+  // long last_print = millis();
+  // while (true)
+  // {
+  //   char c = Serial.read();
+  //   if (c == 's')
+  //   {
+  //     Serial.println("Starting code.");
+  //     break;
+  //   }
+  //   if (millis() - last_print > 2000) {
+  //     Serial.println("Press s to start.");
+  //     last_print = millis();
+  //   }
+  // }
+
+  // Clean up the Serial line at the start of the program
+  purgeSerial();
+
+  // Wait for the student to press 's' in the serial monitor
+  waitForStart();
 }
 void loop()
 {
@@ -73,17 +80,20 @@ void loop()
 
   long now = millis();
 
-  if (Serial.available())
-  {
-    if (Serial.read() == 's')
-    {
-      bus.CommandTorques(0, 0, 0, 0, C610Subbus::kIDZeroToThree);
-      Serial.println("Stopping.");
-      while (true)
-      {
-      }
-    }
-  }
+  // if (Serial.available())
+  // {
+  //   if (Serial.read() == 's')
+  //   {
+  //     bus.CommandTorques(0, 0, 0, 0, C610Subbus::kIDZeroToThree);
+  //     Serial.println("Stopping.");
+  //     while (true)
+  //     {
+  //     }
+  //   }
+  // }
+
+  // Check if the student has pressed 's' to stop the program
+  checkForStop();
 
   if (now - last_command >= LOOP_DELAY_MILLIS)
   {
