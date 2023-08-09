@@ -7,8 +7,6 @@ C610Bus<CAN2> bus;     // Initialize the Teensy's CAN bus to talk to the motors
 
 const int LOOP_DELAY_MILLIS = 5; // Wait for 0.005s between motor updates.
 
-const float m1_offset = 0.0;
-
 // Implement your own PD controller here.
 float pd_control(float pos,
                  float vel,
@@ -36,6 +34,7 @@ void sanitize_current_command(float &command,
   command = command < -max_current ? -max_current : command;
   if (pos > max_pos || pos < -max_pos)
   {
+    command = 0;
     Serial.println("ERROR: Actuator position outside of allowed bounds.");
   }
   if (vel > max_vel || vel < -max_vel)
@@ -45,51 +44,20 @@ void sanitize_current_command(float &command,
   }
 }
 
-// This code waits for the user to type s before executing code.
 void setup()
 {
-  // // Remove all characters that might have been stored up in the serial input buffer prior to running this program
-  // while (Serial.available()) {
-  //   Serial.read();
-  // }
-  // long last_print = millis();
-  // while (true)
-  // {
-  //   char c = Serial.read();
-  //   if (c == 's')
-  //   {
-  //     Serial.println("Starting code.");
-  //     break;
-  //   }
-  //   if (millis() - last_print > 2000) {
-  //     Serial.println("Press s to start.");
-  //     last_print = millis();
-  //   }
-  // }
-
   // Clean up the Serial line at the start of the program
   purgeSerial();
 
   // Wait for the student to press 's' in the serial monitor
   waitForStart();
 }
+
 void loop()
 {
   bus.PollCAN(); // Check for messages from the motors.
 
   long now = millis();
-
-  // if (Serial.available())
-  // {
-  //   if (Serial.read() == 's')
-  //   {
-  //     bus.CommandTorques(0, 0, 0, 0, C610Subbus::kIDZeroToThree);
-  //     Serial.println("Stopping.");
-  //     while (true)
-  //     {
-  //     }
-  //   }
-  // }
 
   // Check if the student has pressed 's' to stop the program
   checkForStop();
