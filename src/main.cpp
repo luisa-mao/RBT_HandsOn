@@ -14,7 +14,13 @@ float pd_control(float pos,
                  float Kp,
                  float Kd)
 {
-  return 0.0; // YOUR CODE HERE
+  float error = target - pos;
+  float derivative = -vel;
+  float command = Kp * error + Kd * derivative;
+  // print command
+  Serial.print("\tcommand: ");
+  Serial.print(command);
+  return command;
 }
 
 /* Sanitize current command to make it safer.
@@ -30,6 +36,9 @@ void sanitize_current_command(float &command,
                               float max_vel = 30,
                               float reduction_factor = 0.1)
 {
+  // print command
+  Serial.print("\tcommand: ");
+  Serial.print(command);
   command = command > max_current ? max_current : command;
   command = command < -max_current ? -max_current : command;
   if (pos > max_pos || pos < -max_pos)
@@ -75,7 +84,7 @@ void loop()
 
     // Your PD controller is run here.
     float Kp = 1000.0;
-    float Kd = 0;
+    float Kd = 30;
     float target_position = 0.0; // modify in step 8
     m0_current = pd_control(m0_pos, m0_vel, target_position, Kp, Kd);
 
